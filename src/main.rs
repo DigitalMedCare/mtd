@@ -5,16 +5,35 @@ extern crate serde_json;
 use serde_json::Value as JsonValue;
 use serde_json::json;
 
+use std::io;
+
 fn main() {
-    find_and_delete_message();
+    let mut input = String::new();
+
+    println!("Input Username");
+    match io::stdin().read_line(&mut input){
+        Ok(_)=>{
+            println!("Deleting for User: {}", input.to_lowercase());
+        }
+        Err(e) => println!("Something went wrong {}", e),
+    }
+
+    let new_input = input.trim_end().to_lowercase();
+    find_and_delete_message(new_input);
 }
 
 
-fn find_and_delete_message(){
+fn find_and_delete_message(username: String){
     let connection = sqlite::open("homeserver.db").unwrap();
-        
+    let mut event_id_statement = "select event_id from events where type='m.room.message' and sender='@".to_owned();
+    event_id_statement.push_str(&username);
+    event_id_statement.push_str(":matrix.digitalmedcare.de'");
+
+    println!("event id statement: {}", event_id_statement);
+
+
     let  statement = connection
-    .prepare("select event_id from events where type='m.room.message'")
+    .prepare(event_id_statement)
     .unwrap();
 
     let messages = find_messages(statement);
@@ -46,7 +65,7 @@ fn find_message_content(result: String) -> String{
    
     if message_from_json.is_ok(){
         let mut p: JsonValue = message_from_json.unwrap();
-        p["content"]["body"] = json!("Delted Message");
+        p["content"]["body"] = json!("Deleted Message");
         return p.to_string();
     }else{
         println!("Feierabend!");
