@@ -29,3 +29,6 @@ SET json =  {"auth_events":["$h_cUFo0DqWdLIWO88tJY2jMKcnXU56spzDqZpxJF9Sc","$KiF
 WHERE event_id = '$zhXyXUJvn7NwHtgzKpls_9uem_TsWm9rpCj6N3GO8eE';
 
 select * from events where type='m.room.message and sender='@ralf:matrix.digitalmedcare.de'
+
+
+ scp root@212.227.190.252:~/synapse/homeserver.db ~/Downloads/homeserver.db
