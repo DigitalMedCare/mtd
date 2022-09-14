@@ -1,4 +1,4 @@
-use sqlite::{State, Statement};
+use sqlite3::{State, Statement};
 extern crate serde_json;
 use serde_json::Value as JsonValue;
 use serde_json::json;
@@ -22,10 +22,10 @@ fn main() {
 
 
 fn find_and_delete_message(username: String){
-    let connection = sqlite::open("homeserver.db").unwrap();
-    let mut event_id_statement = "select event_id from events where type='m.room.message' and sender='@".to_owned();
+    let connection = sqlite3::open("homeserver.db").unwrap();
+    let mut event_id_statement = "select event_id from events where type='m.room.encrypted' and sender='@".to_owned();
     event_id_statement.push_str(&username);
-    event_id_statement.push_str(":matrix.digitalmedcare.de'");
+    event_id_statement.push_str(":matrixtest.digitalmedcare.de'");
 
     println!("event id statement: {}", event_id_statement);
 
@@ -57,8 +57,11 @@ fn find_and_delete_message(username: String){
     
         update_statement.push_str("SET json ='");
         update_statement.push_str(&new_json);
-        update_statement.push_str("' WHERE event_id = '$zhXyXUJvn7NwHtgzKpls_9uem_TsWm9rpCj6N3GO8eE';");
-        connection.prepare(&update_statement).unwrap();
+       update_statement.push_str("' WHERE event_id = '");
+       update_statement.push_str( &i);
+       update_statement.push_str("';");
+ 
+       connection.execute(&update_statement).unwrap();
         
         println!("{}", update_statement);
  }
@@ -71,7 +74,10 @@ fn find_message_content(result: String) -> String{
     
     if message_from_json.is_ok(){
         let mut p: JsonValue = message_from_json.unwrap();
-        p["content"]["body"] = json!("Deleted Message");
+        p["content"] = json!({
+            "body": "MESSAGE DELETED",
+            "msgtype": "m.text"});
+        //p["content"]["org.matrix.msc1767.text"] = json!("Deleted Message");
         return p.to_string();
     }else{
         return "Feierabend".to_string();
