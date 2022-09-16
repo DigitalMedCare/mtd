@@ -2,10 +2,24 @@ use sqlite3::{State, Statement};
 extern crate serde_json;
 use serde_json::Value as JsonValue;
 use serde_json::json;
-
 use std::io;
+use std::env;
 
 fn main() {
+
+    let args: Vec<String> = env::args().collect();
+    if args.len() == 3{
+       let user = &args[1];
+       let path = &args[2];
+        
+       find_and_delete_message(user.to_string(),  path.to_string());
+      
+    }
+    if args.len() != 0 && args.len() < 3{
+        print!("NOT ENOUGH ARGUMENTS! \u{1F44E}");
+    }
+    else{
+
     let mut input = String::new();
 
     println!("Input Username");
@@ -17,12 +31,15 @@ fn main() {
     }
 
     let new_input = input.trim_end().to_lowercase();
-    find_and_delete_message(new_input);
+    find_and_delete_message(new_input, "homeserver.db".to_string());
+    }
+
+    
 }
 
 
-fn find_and_delete_message(username: String){
-    let connection = sqlite3::open("homeserver.db").unwrap();
+fn find_and_delete_message(username: String, path_to_db: String){
+    let connection = sqlite3::open(path_to_db).unwrap();
     let mut event_id_statement = "select event_id from events where type='m.room.encrypted' and sender='@".to_owned();
     event_id_statement.push_str(&username);
     event_id_statement.push_str(":matrixtest.digitalmedcare.de'");
@@ -57,9 +74,9 @@ fn find_and_delete_message(username: String){
     
         update_statement.push_str("SET json ='");
         update_statement.push_str(&new_json);
-       update_statement.push_str("' WHERE event_id = '");
-       update_statement.push_str( &i);
-       update_statement.push_str("';");
+        update_statement.push_str("' WHERE event_id = '");
+        update_statement.push_str( &i);
+        update_statement.push_str("';");
  
        connection.execute(&update_statement).unwrap();
         
