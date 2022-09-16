@@ -8,12 +8,20 @@ use std::io;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
+    let matrix = ":matrix.digitalmedcare.de"; 
+    println!("MATRIX: {}", matrix);
 
     if args.len() == 3 {
         let user = &args[1];
         let path = &args[2];
 
-        find_and_delete_message(user.to_string(), path.to_string());
+        find_and_delete_message(user.to_string(), path.to_string(), matrix.to_string());
+    }
+    if args.len() == 4 {
+        let user = &args[1];
+        let path = &args[2];
+        let matrix = &args[3];
+        find_and_delete_message(user.to_string(), path.to_string(), matrix.to_string());
     }
     if args.len() != 0 && args.len() < 3 {
         print!("NOT ENOUGH ARGUMENTS! \u{1F44E}");
@@ -29,16 +37,19 @@ fn main() {
         }
 
         let new_input = input.trim_end().to_lowercase();
-        find_and_delete_message(new_input, "homeserver.db".to_string());
+        find_and_delete_message(new_input, "homeserver.db".to_string(), matrix.to_string());
     }
 }
 
-fn find_and_delete_message(username: String, path_to_db: String) {
+fn find_and_delete_message(username: String, path_to_db: String, matrix_adress: String) {
     let connection = sqlite3::open(path_to_db).unwrap();
     let mut event_id_statement =
-        "select event_id from events where type='m.room.message' and sender='@".to_owned();
+        "select event_id from events where type='m.room.encrypted' and sender='@".to_owned();
     event_id_statement.push_str(&username);
-    event_id_statement.push_str(":matrix.digitalmedcare.de'");
+    event_id_statement.push_str(&matrix_adress);
+    event_id_statement.push_str("'");
+
+    print!("event:{} ", event_id_statement);
 
     let statement = connection.prepare(event_id_statement).unwrap();
 
