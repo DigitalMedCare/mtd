@@ -3,7 +3,7 @@
 # How to use
 
 Just type in ./mtd
-If you don't give it any parameters, it prompts you the different things you can Input (for now only the name is asked).
+If you don't give it any parameters, it prompts you the different things you can input.
 
 You can also start it with some parameters.
 It's always in the same pattern:
