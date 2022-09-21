@@ -23,21 +23,13 @@ fn main() {
         let matrix = &args[3];
         find_and_delete_message(user.to_string(), path.to_string(), matrix.to_string());
     }
-    if args.len() != 0 && args.len() < 3 {
-        print!("NOT ENOUGH ARGUMENTS! \u{1F44E}");
-    } else if args.len() == 0 {
-        let mut input = String::new();
+    if args.len() != 1 && args.len() < 3 {
+        println!("length: {}",args.len());
+        println!("NOT ENOUGH ARGUMENTS! \u{1F44E}");
+    }
 
-        println!("Input Username");
-        match io::stdin().read_line(&mut input) {
-            Ok(_) => {
-                println!("Deleting for User: {}", input.to_lowercase());
-            }
-            Err(e) => println!("Something went wrong {}", e),
-        }
-
-        let new_input = input.trim_end().to_lowercase();
-        find_and_delete_message(new_input, "homeserver.db".to_string(), matrix.to_string());
+    if args.len() == 1 {
+        user_input();
     }
 }
 
@@ -107,4 +99,44 @@ fn find_json(mut statement: Statement) -> String {
         return statement.read::<String>(3).unwrap().to_string();
     }
     return "failed".to_string();
+}
+
+fn user_input(){
+    let mut input1 = String::new();
+        let mut input2 = String::new();
+        let mut input3 = String::new();
+        
+        println!("Input Username");
+        match io::stdin().read_line(&mut input1) {
+            Ok(_) => {
+                println!("Deleting for User: {}", input1.to_lowercase());
+            }
+            Err(e) => println!("Something went wrong {}", e),
+        }
+
+        let username = input1.trim_end().to_lowercase();
+
+        println!("path to homeserver.db");
+        match io::stdin().read_line(&mut input2) {
+            Ok(_) => {
+                println!("Deleting for User: {}", input2.to_lowercase());
+            }
+            Err(e) => println!("Something went wrong {}", e),
+        }
+
+        let homserver = input2.trim_end().to_lowercase();
+
+        
+
+        println!("matrix adress");
+        match io::stdin().read_line(&mut input3) {
+            Ok(_) => {
+                println!("Deleting for User: {}", input3.to_lowercase());
+            }
+            Err(e) => println!("Something went wrong {}", e),
+        }
+
+        let matrix = input3.trim_end().to_lowercase();
+
+        find_and_delete_message(username, homserver, matrix);
 }
