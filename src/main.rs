@@ -3,6 +3,7 @@ extern crate serde_json;
 use indicatif::ProgressBar;
 use serde_json::json;
 use serde_json::Value as JsonValue;
+use sha256::digest;
 use std::env;
 use std::io;
 
@@ -60,8 +61,13 @@ fn find_and_delete_message(username: String, path_to_db: String, matrix_adress: 
 
         let json = find_json(new);
         let mut update_statement: String = "UPDATE event_json  ".to_owned();
-        let new_json = find_message_content(&json);
+        let hashed_user_name = create_hash(&json);
+        let new_json = find_message_content(&json, hashed_user_name);
+
+        print!("new_json: {}", new_json);
+
         let mut prev_events: Vec<String> = Vec::new();
+
         prev_events.push(find_prev_events(json));
 
         update_statement.push_str("SET json ='");
@@ -75,27 +81,42 @@ fn find_and_delete_message(username: String, path_to_db: String, matrix_adress: 
     bar.finish();
 }
 
-fn find_prev_events(result: String) -> String{
-        let message_from_json: Result<JsonValue, serde_json::Error> = serde_json::from_str(&result);
-    
-        if message_from_json.is_ok() {
-            let p: JsonValue = message_from_json.unwrap();
-            println!("prev Event: {}", p["prev_events"]);
-            return p["prev_events"].to_string();
-        } else {
-            return "Feierabend".to_string();
-        }
+fn create_hash(json: &String) -> String {
+    let canonical_json: Result<JsonValue, serde_json::Error> = serde_json::from_str(&json);
+
+    if canonical_json.is_ok() {
+        let json_value: JsonValue = canonical_json.unwrap();
+        println!("sender: {}", json_value["sender"].to_string());
+        let hashed_user_name = digest(json_value["sender"].to_string());
+        print!("hashed user name: {}", hashed_user_name);
+        return hashed_user_name;
+    }
+    return "failed!".to_string();
 }
 
-fn find_message_content(result: &String) -> String {
+fn find_prev_events(result: String) -> String {
+    println!("result: {}", result);
+    let message_from_json: Result<JsonValue, serde_json::Error> = serde_json::from_str(&result);
+    if message_from_json.is_ok() {
+        let json_value: JsonValue = message_from_json.unwrap();
+        //println!("prev Event: {}", p["prev_events"]);
+
+        return json_value["prev_events"].to_string();
+    } else {
+        return "Feierabend".to_string();
+    }
+}
+
+fn find_message_content(result: &String, hashed_user_name: String) -> String {
     let message_from_json: Result<JsonValue, serde_json::Error> = serde_json::from_str(&result);
 
     if message_from_json.is_ok() {
-        let mut p: JsonValue = message_from_json.unwrap();
-        p["content"] = json!({
+        let mut json_value: JsonValue = message_from_json.unwrap();
+        json_value["content"] = json!({
             "body": "MESSAGE DELETED",
             "msgtype": "m.text"});
-        return p.to_string();
+        json_value["sha256"] = json!({ "sha256": hashed_user_name });
+        return json_value.to_string();
     } else {
         return "Feierabend".to_string();
     }
