@@ -38,6 +38,7 @@ fn find_and_delete_message(username: String, path_to_db: String, matrix_adress: 
     let mut event_id_statement =
         "select event_id from events where type='m.room.encrypted' and sender='@".to_owned();
     event_id_statement.push_str(&username);
+    event_id_statement.push_str(":");
     event_id_statement.push_str(&matrix_adress);
     event_id_statement.push_str("'");
 
