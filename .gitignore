@@ -1,3 +1,4 @@
 /target
 homeserver.db
 notes.txt
+*.json

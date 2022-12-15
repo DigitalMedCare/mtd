@@ -5,10 +5,45 @@ use serde_json::json;
 use serde_json::Value as JsonValue;
 use std::env;
 use std::io;
+use std::fs;
+mod hash;
+
 
 fn main() {
+    let file_contet = fs::read_to_string("raw2.json")
+    .expect("Should have been able to read the file");
+    
+    let json_file: Result<JsonValue, serde_json::Error> = serde_json::from_str(&file_contet);
+    
+    // Original
+    let real_json: JsonValue = json_file.unwrap();
+    let real_hash = real_json["hashes"]["sha256"].to_string().replace("\"", "");
+    println!("real hash: {real_hash}");
+
+    // Homebrew
+    let mut new_json: JsonValue = real_json.clone();
+    let content_hash:String = hash::generate_hash(&new_json);
+    
+
+    println!("calc hash: {content_hash}\n");
+    let cmp = (content_hash == real_hash).to_string();
+    
+    assert_eq!(content_hash, real_hash);
+    println!("same? {cmp}\n");
+
+    new_json["hashes"] = json!({
+        "sha256": content_hash
+    });
+    assert_eq!(new_json, real_json);
+
+    main2();
+}
+
+fn main2() {
     let args: Vec<String> = env::args().collect();
-    let matrix = ":matrix.digitalmedcare.de"; 
+    //let matrix = "matrix.digitalmedcare.de"; 
+    // ToDo: get serveraddres from datatbase?
+    let matrix = "matrixtest.digitalmecare.de";
     println!("MATRIX: {}", matrix);
 
     if args.len() == 3 {
@@ -35,6 +70,8 @@ fn main() {
 
 fn find_and_delete_message(username: String, path_to_db: String, matrix_adress: String) {
     let connection = sqlite3::open(path_to_db).unwrap();
+    
+    // Select all messages from user
     let mut event_id_statement =
         "select event_id from events where type='m.room.encrypted' and sender='@".to_owned();
     event_id_statement.push_str(&username);
@@ -52,7 +89,7 @@ fn find_and_delete_message(username: String, path_to_db: String, matrix_adress: 
 
     for i in messages.iter() {
         bar.inc(1);
-        let mut where_statement = "select * from event_json where event_id = ".to_owned();
+        let mut where_statement = "SELECT * FROM event_json WHERE event_id = ".to_owned();
         where_statement.push_str("'");
         where_statement.push_str(&i);
         where_statement.push_str("'");
@@ -120,7 +157,7 @@ fn user_input(){
         println!("path to homeserver.db");
         match io::stdin().read_line(&mut input2) {
             Ok(_) => {
-                println!("Deleting for User: {}", input2.to_lowercase());
+                println!("Database file: {}", input2.to_lowercase());
             }
             Err(e) => println!("Something went wrong {}", e),
         }
@@ -132,7 +169,7 @@ fn user_input(){
         println!("matrix adress");
         match io::stdin().read_line(&mut input3) {
             Ok(_) => {
-                println!("Deleting for User: {}", input3.to_lowercase());
+                println!("Matrix server: {}", input3.to_lowercase());
             }
             Err(e) => println!("Something went wrong {}", e),
         }
