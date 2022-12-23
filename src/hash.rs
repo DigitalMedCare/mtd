@@ -53,7 +53,7 @@ fn encode_unpadded_base64(json_bytes: [u8; 32])-> String {
 fn python_digest(canon_event_json: String)-> [u8; 32] {
     let hex_hashed = digest(canon_event_json);
     
-    // Must decode string into bytes, the .to_bytes() function converst each character to a byte
+    // Must decode string into bytes, the .to_bytes() function converts each character to a byte
     let decoded = hex::decode(hex_hashed).unwrap();
     
     let byte_string = vec_to_byte_string(decoded);

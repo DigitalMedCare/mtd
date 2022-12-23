@@ -5,8 +5,6 @@ use indicatif::ProgressBar;
 use serde_json::json;
 use serde_json::Value as JsonValue;
 use std::env;
-use std::fs;
-use std::io;
 use std::time::Instant;
 
 mod hash;
@@ -18,7 +16,7 @@ struct DatabaseMTD {
 impl DatabaseMTD {
     fn get_server_domain(&self) -> &str {
         if self.server_domain == String::from("") {
-            panic!("Database was not initalized. Use the '.init()' method.");
+            panic!("Database was not initialized. Use the '.init()' method.");
         }
         return self.server_domain.as_str();
     }
@@ -46,6 +44,31 @@ impl DatabaseMTD {
         return result.first().unwrap().to_string();
     }
 
+    // WIP
+    fn update_json(&self, json_as_string: String) -> String {
+        // convert string to JSON object
+        let mut event_json: JsonValue = serde_json::from_str(&json_as_string).unwrap();
+
+        // Build new event json
+        // Change message content
+        event_json["content"] = json!({
+            "body": "MESSAGE DELETED",
+            "msgtype": "m.text"});
+        
+        // Generate new hash ToDo: before or after signing?
+        let sha256_hash: String = hash::generate_hash(&event_json);
+        // Set new hash
+        event_json["hashes"] = json!({
+            "sha256": sha256_hash,
+        });
+
+        // ToDo: signature?
+        // *generate signature*
+
+        // This might be dangerous, if p.to_string() formats it different
+        return event_json.to_string();
+    }
+
     pub fn new(database_path: &str) -> Self {
         Self {
             database: sqlite3::open(database_path).unwrap(),
@@ -71,6 +94,7 @@ impl DatabaseMTD {
         println!("## matrix server domain has been taken from database [Table 'room_alias_servers', column 'server'] ##")
     }
 
+    // This is for dev purposes
     pub fn find_all_event_types(&self, username: &str) {
         println!("Following event types where found:");
         println!("--------------------");
@@ -88,87 +112,45 @@ impl DatabaseMTD {
         println!("--------------------\n");
     }
 
-    fn update_json(&self, json_as_string: String) -> String {
-        // convert string to JSON object
-        let mut event_json: JsonValue= serde_json::from_str(&json_as_string).unwrap();
-        /*
-        let event_json: Result<JsonValue, serde_json::Error> = serde_json::from_str(&json_as_string);
-        
-        if event_json.is_err() {
-            panic!(
-                "String could not produce valid JSON object\nString: {}",
-                json_as_string
-            );
-        }
+    pub fn get_json(&self, message_id: &str) -> String {
+        let select_message_event_json: String =
+            format!("SELECT json FROM event_json WHERE event_id = '{message_id}';");
 
-        let mut event_json_obj: JsonValue = event_json.unwrap();
-        */
-
-        // Check hash
-        /*
-        let real_hash: String = p["hashes"]["sha256"].to_string();
-        let content_hash: String = format!("\"{}\"", hash::generate_hash(&p));
-        println!("real hash: {real_hash}");
-        println!("calc hash: {content_hash}\n");
-        let cmp = (content_hash == real_hash).to_string();
-
-        // assert_eq!(content_hash, real_hash);
-        println!("same? {cmp}\n");
-        */
-
-        event_json["content"] = json!({
-                "body": "MESSAGE DELETED",
-                "msgtype": "m.text"});
-
-        // This might be dangerous, if p.to_string() formats it different
-        return event_json.to_string();
+        return self.execute_single(&select_message_event_json);
     }
 
-    // WIP
-    fn delete_message(&self, message_id: String) {
+    // ToDo, this might be changed, so it returns the prev_event. recursively iterate over it like that
+    // But how do I find the very last message then?
+    pub fn delete_message(&self, message_id: &str) {
         // Get the event json of the message
-        // That json contains all data about that message
-        let json_string: String = self.get_new_event_json(&message_id);
+        // This json contains all data about that message/event
+        let json_as_string: String = self.get_json(message_id).to_string();
 
+        // Update json data to not contain the message
+        let updated_json_string: String = self.update_json(json_as_string);
+
+        // Update json in database / Write changes to database
         let update_statement: String = format!(
-            "UPDATE event_json  SET json ='{json_string}' WHERE event_id = '{message_id}';",
+            "UPDATE event_json  SET json ='{updated_json_string}' WHERE event_id = '{message_id}';",
         );
-
         self.database.execute(&update_statement).unwrap();
     }
 
-    // WIP
-    fn get_new_event_json(&self, event_id: &String) -> String {
-        let select_message_event_json: String =
-            format!("SELECT json FROM event_json WHERE event_id = '{event_id}';");
-
-        let event_json: String = self.execute_single(&select_message_event_json);
-
-        let new_json: String = self.update_json(event_json);
-
-        return new_json;
-    }
-
     // WIP this might get changed to traverse prev_event or other behavior
-    pub fn delete_user_messages(&self, username: &str) {
+    pub fn get_all_user_message_ids(&self, username: &str) -> Vec<String> {
         self.find_all_event_types(username);
 
         // Select all message ids from user (of type encrypted message)
-        let select_assl_message_ids: String = format!(
+        let select_all_message_ids: String = format!(
             "SELECT event_id FROM events WHERE type='m.room.encrypted' AND sender='@{}:{}'",
             username, self.server_domain
         );
-        let messages: Vec<String> = self.execute(&select_assl_message_ids);
+        let message_ids: Vec<String> = self.execute(&select_all_message_ids);
 
-        // Delete every message content
-        let bar = ProgressBar::new(messages.len().try_into().unwrap());
-        for message_id in messages {
-            bar.inc(1);
-            self.delete_message(message_id);
-        }
-        bar.finish();
+        return message_ids;
     }
 
+    // ToDo: these functions will be necessary later
     /*fn pub delete_user(user: &str) {
         let u: String = user;
     }*/
@@ -178,34 +160,27 @@ impl DatabaseMTD {
     }*/
 }
 
-fn test_hashing() {
-    let file_contet =
-        fs::read_to_string("raw2.json").expect("Should have been able to read the file");
+fn test_hashing(username: String, db: &DatabaseMTD) {
+    let db_json_ids: Vec<String> = db.get_all_user_message_ids(&username);
 
-    let json_file: Result<JsonValue, serde_json::Error> = serde_json::from_str(&file_contet);
+    for db_json_id in db_json_ids {
+        // Original
+        let db_json: JsonValue = serde_json::from_str(&db.get_json(&db_json_id)).unwrap();
+        let db_hash: String = db_json["hashes"]["sha256"].to_string().replace("\"", "");
+        println!("real hash: {db_hash}");
 
-    // Original
-    let real_json: JsonValue = json_file.unwrap();
-    let real_hash = real_json["hashes"]["sha256"].to_string().replace("\"", "");
-    println!("real hash: {real_hash}");
+        // Homebrew
+        let content_hash: String = hash::generate_hash(&db_json);
+        println!("calc hash: {content_hash}");
 
-    // Homebrew
-    let mut new_json: JsonValue = real_json.clone();
-    let content_hash: String = hash::generate_hash(&new_json);
-
-    println!("calc hash: {content_hash}\n");
-    let cmp = (content_hash == real_hash).to_string();
-
-    assert_eq!(content_hash, real_hash);
-    println!("same? {cmp}\n");
-
-    new_json["hashes"] = json!({ "sha256": content_hash });
-    assert_eq!(new_json, real_json);
+        let cmp = (content_hash == db_hash).to_string();
+        assert_eq!(content_hash, db_hash);
+        println!("same? {cmp}\n");
+    }
 }
 
 fn main() {
     let mut db: DatabaseMTD = DatabaseMTD::new("");
-    test_hashing();
 
     let start: Instant = Instant::now();
 
@@ -222,7 +197,8 @@ fn main() {
         user = &args[1];
         path = &args[2];
 
-        let matrix = &args[3];
+        // ToDo: this all might get removed to support only one or two usages
+        // let matrix = &args[3];
     }
     if args.len() != 1 && args.len() < 3 {
         println!("length: {}", args.len());
@@ -232,14 +208,25 @@ fn main() {
     if args.len() == 1 {
         panic!("No arguments provided");
     }
+
+
     db = DatabaseMTD::new(path);
     db.init();
-    db.delete_user_messages(user);
-    //find_and_delete_message(user.to_string(), path.to_string(), db.get_server_domain());
+    let messages = db.get_all_user_message_ids(user);
+    let bar = ProgressBar::new(messages.len().try_into().unwrap());
+    // Delete every message content
+    for message_id in messages {
+        bar.inc(1);
+        db.delete_message(&message_id);
+    }
+    bar.finish();
+    
 
     println!("MATRIX: {}", db.get_server_domain());
 
     let elapsed_time = start.elapsed().as_millis();
     println!("The time is probably {}ms", elapsed_time);
+
+    test_hashing(user.to_string(), &db);
     // println!("Time to beat is 20ms, from previous version!")
 }
