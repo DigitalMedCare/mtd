@@ -7,7 +7,7 @@ use serde_json::Value as JsonValue;
 use std::env;
 use std::time::Instant;
 
-mod validation;
+mod hash;
 
 struct DatabaseMTD {
     database: Connection,
@@ -56,7 +56,7 @@ impl DatabaseMTD {
             "msgtype": "m.text"});
         
         // Generate new hash ToDo: before or after signing?
-        let sha256_hash: String = validation::generate_hash(&event_json);
+        let sha256_hash: String = hash::generate_hash(&event_json);
         // Set new hash
         event_json["hashes"] = json!({
             "sha256": sha256_hash,
@@ -142,7 +142,7 @@ impl DatabaseMTD {
 
         // Select all message ids from user (of type encrypted message)
         let select_all_message_ids: String = format!(
-            "SELECT event_id FROM events WHERE type='m.room.message' AND sender='@{}:{}'",
+            "SELECT event_id FROM events WHERE type='m.room.encrypted' AND sender='@{}:{}'",
             username, self.server_domain
         );
         let message_ids: Vec<String> = self.execute(&select_all_message_ids);
@@ -163,36 +163,20 @@ impl DatabaseMTD {
 fn test_hashing(username: String, db: &DatabaseMTD) {
     let db_json_ids: Vec<String> = db.get_all_user_message_ids(&username);
 
-    println!("Testing hashes for user [{username}]");
-    for db_json_id in &db_json_ids {
+    for db_json_id in db_json_ids {
         // Original
         let db_json: JsonValue = serde_json::from_str(&db.get_json(&db_json_id)).unwrap();
         let db_hash: String = db_json["hashes"]["sha256"].to_string().replace("\"", "");
-        //println!("real hash: {db_hash}");
+        println!("real hash: {db_hash}");
 
         // Homebrew
-        let content_hash: String = validation::generate_hash(&db_json);
-        //println!("calc hash: {content_hash}");
+        let content_hash: String = hash::generate_hash(&db_json);
+        println!("calc hash: {content_hash}");
 
+        let cmp = (content_hash == db_hash).to_string();
         assert_eq!(content_hash, db_hash);
-        let cmp: bool = (content_hash == db_hash);
-        if !cmp {
-            println!("hash did not match:\noriginal: {}\ngenerated: {}", db_hash, content_hash);
-            return;
-        }
-        //println!("same? {cmp}\n");
+        println!("same? {cmp}\n");
     }
-    let num_hashes: usize = db_json_ids.len();
-    println!("All hashes [{num_hashes}] match!");
-}
-
-fn test_signature(message: String) {
-    let msg_json: JsonValue = serde_json::from_str(&message).unwrap();
-    let server: String = String::from("matrix.digitalmedcare.de"); // ToDo change! not hard coded
-    let generator: String = String::from("ed25519:a_zzds"); // ToDo change! not hard coded
-    let original_signature: String = msg_json["signatures"][server][generator].to_string();
-
-    let new_signature: String = validation::sign(message);
 }
 
 fn main() {
@@ -228,12 +212,8 @@ fn main() {
 
     db = DatabaseMTD::new(path);
     db.init();
-    // Test hashes
-    test_hashing(user.to_string(), &db);
-
-    // Do the work
-    let messages: Vec<String> = db.get_all_user_message_ids(user);
-    let bar:ProgressBar = ProgressBar::new(messages.len().try_into().unwrap());
+    let messages = db.get_all_user_message_ids(user);
+    let bar = ProgressBar::new(messages.len().try_into().unwrap());
     // Delete every message content
     for message_id in messages {
         bar.inc(1);

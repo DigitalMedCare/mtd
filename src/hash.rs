@@ -1,48 +1,7 @@
-use std::{collections::BTreeMap, str::FromStr};
+use std::collections::BTreeMap;
 use serde_json::Value as JsonValue;
 use sha256::digest;
 
-
-fn sign_json(json_object: String, signing_key: String, signing_name: String) -> String {
-    /*
-    Python code:
-
-    sign_json(json_object, signing_key, signing_name) {
-    signatures = json_object.pop("signatures", {})
-    unsigned = json_object.pop("unsigned", None)
-
-    signed = signing_key.sign(encode_canonical_json(json_object))
-    signature_base64 = encode_base64(signed.signature)
-
-    key_id = "%s:%s" % (signing_key.alg, signing_key.version)
-    signatures.setdefault(signing_name, {})[key_id] = signature_base64
-
-    json_object["signatures"] = signatures
-    if unsigned is not None:
-        json_object["unsigned"] = unsigned
-
-    return json_object
-    */
-    let mut json_object: BTreeMap<String, JsonValue> = serde_json::from_str(&json_object.to_string()).expect("failed to make json object");
-
-    let mut signatures: JsonValue = json_object.remove_entry("signatures").unwrap().1;
-    let mut unsigned: JsonValue = json_object.remove_entry("unsigned").unwrap().1;
-
-    /*
-    Python code:
-
-    let signed = signing_key.sign(encode_canonical_json(json_object));
-    let signature_base64 = encode_base64(signed.signature);
-
-    key_id = "%s:%s" % (signing_key.alg, signing_key.version);
-    signatures.setdefault(signing_name, {})[key_id] = signature_base64;
-
-    json_object["signatures"] = signatures;
-    if unsigned is not None:
-        json_object["unsigned"] = unsigned;*/
-
-    return String::from("_");
-}
 
 fn encode_canonical_json(json_map: BTreeMap<String, JsonValue>) -> String {
     let encoded_json = json_map.clone();
@@ -137,15 +96,6 @@ fn compute_content_hash(event_json: &JsonValue)-> [u8; 32] {
     return python_replication;
 }
 
-// ToDo change name to "hash"?
 pub(crate) fn generate_hash(json_value: &JsonValue)-> String {
     return encode_unpadded_base64(compute_content_hash(json_value));
-}
-
-pub(crate) fn sign(message_json: String)-> String {
-    
-    // return sign_json(message_json, signing_key, signing_name);
-    // At this point everything breaks down since there is no equal solution in rust
-    // It would have to be done in house
-    return String::from("");
 }

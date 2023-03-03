@@ -1,6 +1,5 @@
 /target
-*.db
-*.bak
+homeserver.db
+homeserver.bak
 notes.txt
 *.json
-debug
