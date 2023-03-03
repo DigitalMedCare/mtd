@@ -1,5 +1,6 @@
-/target
-homeserver.db
-homeserver.bak
-notes.txt
+.idea
 *.json
+homeserver.signing.key
+*.db
+*.bak
+federation_client.py
