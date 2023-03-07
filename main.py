@@ -1,3 +1,5 @@
+import argparse
+import yaml
 import json
 import re
 import sqlite3
@@ -298,6 +300,36 @@ def setup_database(_database: str) -> sqlite3.Connection:
 
 def main():
     print("Main")
+    # Instantiate the parser
+    parser = argparse.ArgumentParser(
+        description='A script to alter all messages of a matrix user in the database.'
+    )
+
+    # Required argument, user name
+    parser.add_argument('username', type=str,
+                        help='The name of the user to be deleted')
+
+    # Optional argument, database path
+    parser.add_argument('config', type=str,
+                        help='To get all necessary information like server domain and signing key you have to provide '
+                             'the .yaml file.')
+
+    # Parse arguments
+    args = parser.parse_args()
+
+    # Access
+    print(args.username)
+
+    # Read the YAML file
+    with open(args.config, "r") as stream:
+        try:
+            config: dict = yaml.safe_load(stream)
+            print(config['database']['args']['database'])
+            print(config['signing_key_path'])
+        except yaml.YAMLError as exc:
+            print(exc)
+
+    sys.exit()
 
     # parameter
     _db: str = "homeserver.db"

@@ -1,6 +1,7 @@
 .idea
 *.json
-homeserver.signing.key
 *.db
 *.bak
+homeserver.signing.key
 federation_client.py
+homeserver.yaml
