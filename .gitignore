@@ -1,7 +1,10 @@
 .idea
 *.json
 *.db
+*.db-shm
+*.db-wal
 *.bak
+*.sql
 homeserver.signing.key
 federation_client.py
 homeserver.yaml

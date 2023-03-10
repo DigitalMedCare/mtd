@@ -1,64 +1,33 @@
 # mtd (Matrix to DSGVO)
 
+# Setup
+
+install python3 if not already installed: \
+`sudo apt install python1`
+
+(setup is missing requirements.txt right now, to install all dependencies)
+
+
 # How to use
 
-Just type in ./mtd
-If you don't give it any parameters, it prompts you the different things you can input.
+Python3 is necessary, but since matrix runs on it, it should already be installed.
 
-You can also start it with some parameters.
-It's always in the same pattern:
-
+You call the script via python and give two positional parameters. The user you want to delete and the path to the config file.
 ```bash 
-python3 [username] --database [path/to/homeserver.db] [matrix adress]
+python3 mtd.py [username] [path/to/homeserver.yaml]
 ```
 
 for example:
 ```bash
-./mtd mustermann /var/lib/matrix-synapse/homeserver.db
-``` 
-
-For the Standard matrix.digitalmedcare.de we use, you can even leave out the last parameter.
-
-# How to install
-
-make sure you have rustc and rustup installed.
-Then go into the project folder. 
-
-You can either type in:
-
-```bash 
-cargo run 
-``` 
-
-or
-```bash 
-cargo build --release  
+./mtd mustermann /etc/matrix-synapse/homeserver.yaml
 ```
 
-The first option, only let's you compile and run mtd. So you won't be able to give it any parameters.
-It's heavly advised you use the build option. Because then you don't have to recompile the program.
-The compiled and build program from cargo build is saved in:
-
-```bash
-mtd/target/release
-``` 
 
 # What does it actually do?
 
-Basicly, it just sends SQL Querries to the Matrix Server.
-In which the JSON Files are changed. In these JSON files are the messages themselves.
-The message String gets changed to "Deleted Message". So the message is for no one readable. Even the Server Admins.
-
-With this method, the database just gets updated. Nothing is deleted or removed.
-
-In the next Section, it is explained which SQL Querries are made by mtd.
-
-# SQl Querries
-
-## Copy remote database
-```bash
-scp root@212.227.190.252:~/synapse/homeserver.db ~/Downloads/homeserver.db
-```
+Every message of a user gets removed from the database entirely. This action can't be undone.
+It also removes any occurrence of the username. \
+Right now it does not remove every trace of every message, but it also does not cause any inconsistencies.
 
 
 
