@@ -8,3 +8,4 @@
 homeserver.signing.key
 federation_client.py
 homeserver.yaml
+__pycache__
