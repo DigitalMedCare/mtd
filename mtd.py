@@ -163,9 +163,19 @@ def delete_user(user: str) -> None:
     # Room events
     db_cursor.execute(f"DELETE FROM state_events WHERE state_key='{user_id}';")
 
+
     # Other?
     db_cursor.execute(f"DELETE FROM events WHERE sender='{user_id}';")
-    # db_cursor.execute(f"DELETE FROM event_json WHERE sender='{user_id}';")
+    db_cursor.execute(f"DELETE FROM e2e_device_keys_json WHERE user_id='{user_id}';")
+    db_cursor.execute(f"DELETE FROM open_id_tokens WHERE user_id='{user_id}';")
+    db_cursor.execute(f"DELETE FROM event_push_summary WHERE user_id='{user_id}';")
+    db_cursor.execute(f"DELETE FROM user_daily_visits WHERE user_id='{user_id}';")
+    db_cursor.execute(f"DELETE FROM e2e_room_keys_versions WHERE user_id='{user_id}';")
+    db_cursor.execute(f"DELETE FROM e2e_fallback_keys_json WHERE user_id='{user_id}';")
+    # those two might be obsolete after deactivation
+    db_cursor.execute(f"DELETE FROM receipts_linearized WHERE user_id='{user_id}';")
+    db_cursor.execute(f"DELETE FROM receipts_graph WHERE user_id='{user_id}';")
+
 
     for message_id in message_id_list:
         delete_message(message_id)
