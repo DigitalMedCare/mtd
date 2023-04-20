@@ -7,7 +7,7 @@ app = FastAPI()
 
 @app.get('/')
 async def root():
-    return {'API_root': 'Default response to [localhost:8000]', 'data': 0}
+    return {'API_root': 'Default response to [matrix.digitalmedcare.de:8008]', 'data': 0}
 
 
 @app.get('/test_api/{parameter}')
