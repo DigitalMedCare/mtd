@@ -1,11 +1,11 @@
 .idea
-*.json
 *.db
 *.db-shm
 *.db-wal
 *.bak
 *.sql
+admin.token
 homeserver.signing.key
-federation_client.py
 homeserver.yaml
+backup.zip
 __pycache__

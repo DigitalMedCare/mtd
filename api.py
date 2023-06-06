@@ -2,6 +2,8 @@ from fastapi import FastAPI
 
 import mtd
 
+mtd = mtd.MtD("homeserver.yaml")
+
 app = FastAPI()
 
 
@@ -15,9 +17,9 @@ async def test_api(parameter: str):
     return {"function_name": test_api.__name__, 'parameter': parameter, 'return_value': mtd.api_test(parameter)}
 
 
-@app.get('/test_token/{parameter}')
+@app.get('/test_token/{token}')
 async def test_token(token: str):
-    return {"function_name": test_token.__name__, 'token': token, 'valid': mtd.api_test(token)}
+    return {"function_name": test_token.__name__, 'token': token, 'valid': mtd.valid_token(token)}
 
 
 @app.get('/delete_user/{username}')

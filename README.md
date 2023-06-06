@@ -13,7 +13,7 @@ install python3 if not already installed: \
 Python3 is necessary, but since matrix runs on it, it should already be installed.
 
 You call the script via python and give two positional parameters. The user you want to delete and the path to the config file.
-```bash 
+```bash
 python3 mtd.py [username] [path/to/homeserver.yaml]
 ```
 
@@ -67,18 +67,18 @@ select json from event_json where event_id = '$nNftajqqPM7Enz7MvnThzUMKrc_US8UL3
 ```
 
 
-### 
+###
 
 ### Update Message
 ```SQL
 UPDATE event_json
-SET 
+SET
     json = '<json>'
 WHERE
     event_id = '<id>';
 
 -- Examples:
-UPDATE event_json 
+UPDATE event_json
 SET json = {
   "auth_events": [
     "$tfG1Nt7BR6H4aalXKvzP6M6SHZ0qZUTm6guwxQ4V7EI",
