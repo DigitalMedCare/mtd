@@ -28,9 +28,9 @@ for example:
 `grep -oi "<pattern>" <dump>.sql | wc -l`
 * List occurance with line number: \
 `grep -in "<pattern>" <dump>.sql`
-*
+* Create sql dump
 `sqlite3 homeserver.db .dump > del_test.sql`
-*
+* Create sql dump with timestamp
 `sqlite3 homeserver.db .dump > dump_$(date +"%d.%m._%H:%M").sql`
 
 # What does it actually do?
