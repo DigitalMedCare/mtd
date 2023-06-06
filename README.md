@@ -23,6 +23,11 @@ for example:
 ./mtd mustermann /etc/matrix-synapse/homeserver.yaml
 ```
 
+## Useful commands
+* Get the word count in the sql dump: \
+`grep -oi "<pattern>" <dump>.sql | wc -l`
+* List occurance with line number: \
+`grep -in "<pattern>" <dump>.sql`
 
 # What does it actually do?
 
